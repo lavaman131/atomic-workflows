@@ -17,7 +17,7 @@
   &nbsp;·&nbsp;
   <a href="#registry-workflows">Workflows</a>
   &nbsp;·&nbsp;
-  <a href="#built-into-atomic">Built into Atomic</a>
+  <a href="#workflow-details">Details</a>
   &nbsp;·&nbsp;
   <a href="#use-these-as-starting-points">Customize</a>
   &nbsp;·&nbsp;
@@ -31,14 +31,14 @@
 ```json
 {
   "atomic": {
-    "workflows": ["./workflows"]
+    "workflows": ["./workflows/*/index.ts"]
   }
 }
 ```
 
-The workflows here are analysis, review, validation, and reporting recipes. They inspect the repository, collect evidence, and save human-readable reports. They do **not** apply code changes, auto-remediate findings, or auto-post PR comments.
+The workflows here are analysis, review, validation, and reporting recipes. They inspect the repository, collect evidence, and save human-readable reports. They do **not** apply code changes, auto-remediate findings, or auto-post PR comments unless a specific workflow explicitly says otherwise.
 
-Use this repository as a set of concrete developer-job workflows you can run out of the box: turn bugs into test plans, run focused code reviews, gate security risk, and use the same patterns as examples to build your own Atomic workflows—from simpler local checklists to more complex flows that call tools, CLIs, APIs, and other integrations.
+Use this repository as a set of concrete developer-job workflows you can run out of the box: turn bugs into test plans, run focused code reviews, gate security risk, and use the same patterns as examples to build your own Atomic workflows.
 
 ## Get started
 
@@ -60,183 +60,34 @@ atomic install git:github.com/lavaman131/atomic-workflows -l
 
 These workflows are provided by this registry package after installation:
 
-| Workflow | Use it when | Default posture |
-| --- | --- | --- |
-| `issue-test-lab` | Turn issues or bug reports into a risk-based test plan and validation report. | Analysis/reporting only. |
-| `review-board` | Run a parallel specialist board for correctness, architecture, testing, security, and performance review. | No edits and no auto-posting. |
-| `security-gate` | Gate a PR, branch, diff, or repository scope with local security scope detection, scans, secure review, and decision output. | No remediation and no auto-posting. |
-| `spec-driven-development` | Turn a brainstorm or direct implementation intent into research, an approved spec, and a guarded Ralph implementation handoff. | No implementation before human spec approval. |
+| Workflow | Use it when | Default posture | Details |
+| --- | --- | --- | --- |
+| `issue-test-lab` | Turn issues or bug reports into a risk-based test plan and validation report. | Analysis/reporting only. | [`workflows/issue-test-lab/`](./workflows/issue-test-lab/) |
+| `review-board` | Run a parallel specialist board for correctness, architecture, testing, security, and performance review. | No edits and no auto-posting. | [`workflows/review-board/`](./workflows/review-board/) |
+| `security-gate` | Gate a PR, branch, diff, or repository scope with local security scope detection, scans, secure review, and decision output. | No remediation and no auto-posting. | [`workflows/security-gate/`](./workflows/security-gate/) |
+| `spec-driven-development` | Turn a brainstorm or direct implementation intent into research, an approved spec, and a guarded Ralph implementation handoff. | No implementation before human spec approval. | [`workflows/spec-driven-development/`](./workflows/spec-driven-development/) |
 
-### List and inspect
+## Workflow details
+
+Workflow-specific command examples, inputs, execution behavior, and report output notes now live with the workflow docs under [`workflows/`](./workflows/):
+
+- [`workflows/README.md`](./workflows/README.md) — registry workflow index, list/inspect commands, report output behavior, and package filters.
+- [`workflows/issue-test-lab/README.md`](./workflows/issue-test-lab/README.md) — issue intake, risk-based test selection, and validation reporting.
+- [`workflows/review-board/README.md`](./workflows/review-board/README.md) — specialist review board configuration and reviewer roles.
+- [`workflows/security-gate/README.md`](./workflows/security-gate/README.md) — security scope detection, scan policy, and gate decisions.
+- [`workflows/spec-driven-development/README.md`](./workflows/spec-driven-development/README.md) — brainstorm/direct modes, spec approval loop, and Ralph handoff.
 
 From an Atomic chat session:
 
 ```text
 /workflow list
-/workflow inputs issue-test-lab
-/workflow inputs review-board
-/workflow inputs security-gate
+/workflow inputs issue-test-lab      # issue, target
+/workflow inputs review-board        # target, focus
+/workflow inputs security-gate       # target, focus
 /workflow inputs spec-driven-development
 ```
 
-### Run examples
-
-```text
-/workflow issue-test-lab issues="Password reset fails after email changes" pr=123 base_ref=main head_ref=fix/password-reset profile=balanced run_commands=true environment=auto
-```
-
-```text
-/workflow review-board pr=123 base_ref=main head_ref=feature/billing scope="packages/billing" depth=standard reviewers="correctness, testing, security" include_pr_comment=true model_strategy=default
-```
-
-```text
-/workflow security-gate pr=123 base_ref=main head_ref=feature/auth scope="auth, sessions, secrets" profile=standard run_scans=true include_threat_model=true
-```
-
-The user-facing entry point is `spec-driven-development`; in Atomic workflow command syntax, pass `mode` and `prompt` as inputs:
-
-```text
-/workflow spec-driven-development mode=brainstorm prompt="I want to improve onboarding" max_loops=5
-```
-
-```text
-/workflow spec-driven-development mode=direct prompt="Add Redis-backed API rate limiting" max_loops=5
-```
-
-```text
-/workflow spec-driven-development mode=auto prompt="Make activation better" max_loops=5
-```
-
-PR-less branch/scope runs are also supported when you want Atomic to inspect local refs, scopes, or the current diff:
-
-```text
-/workflow issue-test-lab task="Validate checkout regression risk" head_ref=feature/checkout profile=quick run_commands=true
-```
-
-```text
-/workflow review-board head_ref=feature/billing scope="packages/billing" depth=standard reviewers="sec, perf, tests" include_pr_comment=false
-```
-
-```text
-/workflow security-gate scope="auth, sessions, secrets" profile=standard run_scans=true include_threat_model=true
-```
-
-### Final reports
-
-Each reporting workflow writes its final Markdown report to disk and returns a compact result with `summary`, `report_path`, and metadata instead of returning the full report inline. If `output_path` is provided, the report is written there. If it is blank, the workflow creates a project-root folder named after the workflow and writes `YYYY-MM-DD-UTC-<summary>.md`.
-
-## Inputs
-
-### `issue-test-lab`
-
-| Input | Type | Default | Description |
-| --- | --- | --- | --- |
-| `issues` | `text` | `""` | Optional issue IDs, bug reports, acceptance criteria, or failing behaviors. Empty means infer from PR/task/current diff when available. |
-| `pr` | `text` | `""` | Optional PR number, URL, branch, or diff reference. |
-| `base_ref` | `text` | `main` | Base branch, tag, or commit. |
-| `head_ref` | `text` | `""` | Head branch, tag, or commit. |
-| `task` | `text` | `""` | Optional testing objective or constraint. |
-| `profile` | `select` | `balanced` | `quick`, `balanced`, or `deep`. |
-| `run_commands` | `boolean` | `true` | Run safe local read-only commands when available. |
-| `environment` | `select` | `auto` | `auto`, `local`, `docker`, or `devcontainer`. |
-| `output_path` | `text` | `""` | Optional destination file path for the final report. When blank, saves under `./issue-test-lab/YYYY-MM-DD-UTC-<summary>.md`. |
-
-### `review-board`
-
-| Input | Type | Default | Description |
-| --- | --- | --- | --- |
-| `pr` | `text` | `""` | Optional PR number, URL, branch, commit range, or diff reference. Empty means use `head_ref`, `scope`, or current diff when available. |
-| `base_ref` | `text` | `main` | Base branch, tag, or commit. |
-| `head_ref` | `text` | `""` | Head branch, tag, or commit. |
-| `scope` | `text` | `""` | Optional paths, packages, risk areas, or boundaries. |
-| `depth` | `select` | `standard` | `quick`, `standard`, or `deep`. |
-| `reviewers` | `text` | `""` | Optional comma/newline reviewer roles. Valid groups: `correctness`/`correctness-review`, `architecture`/`architecture-review`, `testing`/`testing-review`/`test`/`tests`, `security`/`security-review`/`sec`, and `performance`/`performance-review`/`perf`. Empty or no valid roles runs all five. |
-| `include_pr_comment` | `boolean` | `true` | Draft a copyable PR comment; never auto-post. |
-| `model_strategy` | `select` | `default` | `default`, `diverse`, or `fast`. |
-| `output_path` | `text` | `""` | Optional destination file path for the final report. When blank, saves under `./review-board/YYYY-MM-DD-UTC-<summary>.md`. |
-
-### `security-gate`
-
-| Input | Type | Default | Description |
-| --- | --- | --- | --- |
-| `pr` | `text` | `""` | Optional PR number, URL, branch, commit range, or diff reference. Empty means use `head_ref`, `scope`, or current diff when available. |
-| `base_ref` | `text` | `main` | Base branch, tag, or commit. |
-| `head_ref` | `text` | `""` | Head branch, tag, or commit. |
-| `scope` | `text` | `""` | Optional security-sensitive paths, services, assets, or assumptions. |
-| `profile` | `select` | `standard` | `quick`, `standard`, or `deep`. |
-| `run_scans` | `boolean` | `true` | Run safe local read-only security scans when available. |
-| `include_threat_model` | `boolean` | `true` | Include a threat model delta. |
-| `output_path` | `text` | `""` | Optional destination file path for the final report. When blank, saves under `./security-gate/YYYY-MM-DD-UTC-<summary>.md`. |
-
-### `spec-driven-development`
-
-| Input | Type | Default | Description |
-| --- | --- | --- | --- |
-| `mode` | `select` | `auto` | `brainstorm`, `direct`, or `auto`. Auto uses brainstorm for vague/product-shaped prompts and direct for concrete implementation intent. |
-| `prompt` | `text` | required | Feature idea, implementation intent, or problem statement. |
-| `max_loops` | `number` | `5` | Ralph implementation loop cap after human spec approval. |
-
-`brainstorm` asks CE-style one-question-at-a-time prompts, writes a requirements brief under `docs/brainstorms/`, then creates research under `research/docs/` and a spec under `specs/`. `direct` skips product brainstorming and treats `prompt` as implementation intent. `auto` chooses between those paths. The workflow pauses for human spec review with approve/request-changes/reject choices; Ralph is only called after approval and the spec is marked `Approved`.
-
-## `settings.json` filters
-
-Atomic installs workflow packages as a whole package. If a package contains multiple workflows, install the package once and filter which workflows load in `settings.json`.
-
-Load every workflow from this package:
-
-```json
-{
-  "packages": [
-    "git:github.com/lavaman131/atomic-workflows"
-  ]
-}
-```
-
-Load only `review-board` and `security-gate`:
-
-```json
-{
-  "packages": [
-    {
-      "source": "git:github.com/lavaman131/atomic-workflows",
-      "workflows": [
-        "workflows/review-board.ts",
-        "workflows/security-gate.ts"
-      ]
-    }
-  ]
-}
-```
-
-Exclude one workflow while keeping the rest:
-
-```json
-{
-  "packages": [
-    {
-      "source": "git:github.com/lavaman131/atomic-workflows",
-      "workflows": [
-        "!workflows/security-gate.ts"
-      ]
-    }
-  ]
-}
-```
-
-Disable all workflows from this package while keeping the package entry:
-
-```json
-{
-  "packages": [
-    {
-      "source": "git:github.com/lavaman131/atomic-workflows",
-      "workflows": []
-    }
-  ]
-}
-```
-
-See the workflow package setup docs: <https://docs.bastani.ai/workflows#package-setup>.
+The simplified reporting workflows auto-save final reports to `./issue-test-lab/`, `./review-board/`, and `./security-gate/` with `YYYY-MM-DD-<ai-generated-topic>.md` filenames. Intermediate evidence is preserved in hidden run artifact directories with manifests.
 
 ## Built into Atomic
 
@@ -246,16 +97,6 @@ Atomic also ships built-in workflows that do **not** come from this registry and
 | --- | --- |
 | `ralph` | You want an implementation loop that plans, orchestrates workers, simplifies, and reviews. |
 | `open-claude-design` | You want design-system onboarding, generation, refinement, and handoff. |
-
-Examples:
-
-```text
-/workflow ralph prompt="Implement specs/rate-limit.md" max_loops=5
-```
-
-```text
-/workflow open-claude-design prompt="Design a billing page" output_type=page
-```
 
 ## Use these as starting points
 

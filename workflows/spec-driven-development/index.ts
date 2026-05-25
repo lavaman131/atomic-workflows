@@ -1,17 +1,15 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { defineWorkflow } from "@bastani/workflows";
-import { reportFilenameSummary } from "./report-output.js";
+import { reportFilenameSummary } from "../../src/report-output.js";
 
 type TaskContext = { name: string; text: string };
 
 const DEFAULT_MAX_LOOPS = 5;
 const MAX_SPEC_REVIEW_ITERATIONS = 10;
 
-const RESEARCH_SKILL_PATH =
-  "/Users/norinlavaee/.bun/install/global/node_modules/@bastani/atomic/dist/builtin/workflows/skills/research-codebase/SKILL.md";
-const CREATE_SPEC_SKILL_PATH =
-  "/Users/norinlavaee/.bun/install/global/node_modules/@bastani/atomic/dist/builtin/workflows/skills/create-spec/SKILL.md";
+const RESEARCH_SKILL_NAME = "research-codebase";
+const CREATE_SPEC_SKILL_NAME = "create-spec";
 const CE_BRAINSTORM_SOURCE =
   "https://github.com/EveryInc/compound-engineering-plugin/blob/main/docs/skills/ce-brainstorm.md";
 
@@ -105,6 +103,14 @@ function stageTools(extra: string[] = []): string[] {
     "get_search_content",
     ...extra,
   ];
+}
+
+function builtInSkillReference(skillName: string): string {
+  return [
+    `the built-in Atomic \`${skillName}\` skill`,
+    `load it by skill name through Atomic skill discovery (equivalent to /skill:${skillName})`,
+    "never use or assume a machine-local filesystem path for the skill",
+  ].join("; ");
 }
 
 export default defineWorkflow("spec-driven-development")
@@ -233,7 +239,7 @@ Requirements:
     const researchPath = artifactPath("research/docs", initialPrompt, "spec-driven-development-research");
     const research = await ctx.task("codebase-research", {
       previous: implementationIntent,
-      prompt: `Faithfully follow the built-in research-codebase skill at ${RESEARCH_SKILL_PATH}, with this wrapper adaptation: do not write files yourself; return the complete research Markdown so the workflow wrapper can write it to ${researchPath}.
+      prompt: `Faithfully follow ${builtInSkillReference(RESEARCH_SKILL_NAME)}, with this wrapper adaptation: do not write files yourself; return the complete research Markdown so the workflow wrapper can write it to ${researchPath}.
 
 Implementation intent / requirements input:
 {previous}
@@ -258,7 +264,7 @@ Output only the final Markdown content for ${researchPath}; no code fences and n
     const specPath = artifactPath("specs", initialPrompt, "spec-driven-development-spec");
     const specDraft = await ctx.task("create-spec", {
       previous: [implementationIntent, { name: "research-artifact", text: `Research artifact path: ${researchPath}\n\n${researchContent}` }],
-      prompt: `Faithfully follow the built-in create-spec skill at ${CREATE_SPEC_SKILL_PATH}, with this wrapper adaptation: do not write files yourself and do not ask the user questions during this stage; put unresolved decisions in Open Questions for the HIL review gate.
+      prompt: `Faithfully follow ${builtInSkillReference(CREATE_SPEC_SKILL_NAME)}, with this wrapper adaptation: do not write files yourself and do not ask the user questions during this stage; put unresolved decisions in Open Questions for the HIL review gate.
 
 Input and research:
 {previous}
@@ -348,30 +354,31 @@ Output only the complete revised Markdown spec for ${specPath}; no code fences a
     }
 
     const ralphPrompt = `Implement ${specPath}`;
-    const ralphHandoff = await ctx.task("ralph-handoff", {
-      prompt: `The spec has been approved and marked Approved at ${specPath}.
+    const ralphInputs = { prompt: ralphPrompt, max_loops: maxLoops };
+    const ralphCommand = `/workflow ralph prompt=${JSON.stringify(ralphPrompt)} max_loops=${maxLoops}`;
+    const ralphReadyText = [
+      "Spec approved and ready for Ralph.",
+      `Approved spec path: ${specPath}`,
+      `Ralph prompt: ${ralphPrompt}`,
+      `Ralph command: ${ralphCommand}`,
+      "Parent chat/agent should launch Ralph as a separate top-level workflow so Ralph has normal workflow status, graph, attach, pause, interrupt, and resume visibility.",
+    ].join("\n");
 
-You must now hand off to Atomic's built-in Ralph workflow. Do not implement anything yourself in this stage.
-
-Call the workflow tool exactly once with:
-- action: "run"
-- workflow: "ralph"
-- inputs: { "prompt": ${JSON.stringify(ralphPrompt)}, "max_loops": ${maxLoops} }
-
-After the tool call returns, summarize the Ralph run id/status and the approved spec path.`,
-      tools: ["workflow"],
-    });
+    await ctx.stage("ralph-ready").complete(ralphReadyText);
 
     return {
-      status: "approved-and-handed-to-ralph",
+      status: "approved-ready-for-ralph",
       mode: resolvedMode,
       brainstorm_brief_path: brainstormBriefPath,
       research_path: researchPath,
       spec_path: specPath,
       approved_spec_path: specPath,
+      ralph_workflow: "ralph",
       ralph_prompt: ralphPrompt,
+      ralph_inputs: ralphInputs,
+      ralph_command: ralphCommand,
       max_loops: maxLoops,
-      ralph_handoff: ralphHandoff.text,
+      message: "Spec approved. Launch Ralph as a separate top-level workflow using ralph_workflow and ralph_inputs for full Ralph visibility/control.",
     };
   })
   .compile();

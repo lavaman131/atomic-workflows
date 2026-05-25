@@ -58,7 +58,7 @@ export function resolveReportPath(options: Omit<WriteWorkflowReportOptions, "rep
   const date = new Date().toISOString().slice(0, 10);
 
   return {
-    reportPath: join(cwd, options.workflowName, `${date}-UTC-${filenameSummary}.md`),
+    reportPath: join(cwd, options.workflowName, `${date}-${filenameSummary}.md`),
     filenameSummary,
   };
 }

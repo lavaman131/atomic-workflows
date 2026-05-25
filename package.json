@@ -18,7 +18,7 @@
   },
   "atomic": {
     "workflows": [
-      "./workflows"
+      "./workflows/*/index.ts"
     ]
   },
   "peerDependencies": {
@@ -32,6 +32,8 @@
   "files": [
     "README.md",
     "assets/atomic-promo.gif",
+    "src/**/*.ts",
+    "workflows/**/*.md",
     "workflows/**/*.ts"
   ]
 }
