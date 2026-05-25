@@ -1,0 +1,37 @@
+{
+  "name": "atomic-workflows",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Installable workflow recipes for Atomic.",
+  "keywords": [
+    "atomic-package",
+    "atomic",
+    "workflows",
+    "ai",
+    "code-review",
+    "testing",
+    "security"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lavaman131/atomic-workflows.git"
+  },
+  "atomic": {
+    "workflows": [
+      "./workflows"
+    ]
+  },
+  "peerDependencies": {
+    "@bastani/workflows": "*"
+  },
+  "peerDependenciesMeta": {
+    "@bastani/workflows": {
+      "optional": true
+    }
+  },
+  "files": [
+    "README.md",
+    "assets/atomic-promo.gif",
+    "workflows/**/*.ts"
+  ]
+}
