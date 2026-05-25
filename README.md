@@ -7,9 +7,10 @@
 <p align="center"><b>Installable workflow recipes for Atomic.</b></p>
 
 <p align="center">
-  <a href="https://docs.bastani.ai/"><img alt="Docs" src="https://img.shields.io/badge/docs-bastani.ai-111827?style=flat-square" /></a>
-  <a href="https://github.com/flora131/atomic"><img alt="Atomic" src="https://img.shields.io/badge/Atomic-workflows-2563EB?style=flat-square" /></a>
-  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-ready-3178C6?style=flat-square&logo=typescript&logoColor=white" /></a>
+  <a href="https://docs.bastani.ai/"><img src="https://img.shields.io/badge/docs-atomic-blue" alt="Docs"></a>
+  <a href="https://discord.gg/9CvdXUGXR4"><img src="https://img.shields.io/badge/join%20community-discord-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="./package.json"><img src="https://img.shields.io/badge/TypeScript-6.x-3178C6?logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="./package.json"><img src="https://img.shields.io/badge/Bun-Runtime-f9f1e1?logo=bun&logoColor=black" alt="Bun"></a>
 </p>
 
 <p align="center">
@@ -95,6 +96,7 @@ Atomic also ships built-in workflows that do **not** come from this registry and
 
 | Built-in | Use it when |
 | --- | --- |
+| `deep-research-codebase` | You want a deep, multi-stage codebase investigation with scout/research history, parallel specialist waves, and a synthesized research report. |
 | `ralph` | You want an implementation loop that plans, orchestrates workers, simplifies, and reviews. |
 | `open-claude-design` | You want design-system onboarding, generation, refinement, and handoff. |
 
