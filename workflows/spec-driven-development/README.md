@@ -34,21 +34,25 @@ The user-facing entry point is `spec-driven-development`. In Atomic workflow com
 
 ### `brainstorm`
 
-Use for vague or product-shaped prompts. The workflow asks CE-style one-question-at-a-time prompts, then writes a requirements brief before codebase research and spec creation.
+Use for prompts that need clarification before research/spec creation. The workflow now does silent triage and a lightweight repo/context scout before asking anything, so it avoids questions the codebase can answer.
 
-The brainstorm path may ask about:
+Brainstorm behavior:
 
-- specificity
-- evidence
-- counterfactuals
-- attachment to a proposed solution
-- durability of the product direction
+1. `brainstorm-context-scout` — quickly checks existing specs/docs, similar features, and obvious architecture/product constraints. This is intentionally smaller than full research.
+2. `brainstorm-silent-triage` — classifies ambiguity as product-shaped, technical/design-shaped, too vague, or concrete enough.
+3. One-question-at-a-time clarification — asks only top unresolved questions, usually 0-2 and at most 3 by default. If the user chooses to brainstorm more, reserve questions can go up to 6.
+4. Compact direction check — presents:
+   - User/problem
+   - Desired outcome
+   - Key behavior
+   - Important constraints
+   - Non-goals
+   - Assumptions carried into research/spec
+5. Optional saved brief — if brainstorm proceeds, writes `docs/brainstorms/<YYYY-MM-DD>-<slug>.md` with original prompt, clarified intent, decisions, non-goals, assumptions/open questions, and research focus.
 
-It then creates:
+Product-shaped prompts use CE-inspired probes: specificity, outcome, evidence/current pain, counterfactual, and scope boundary. Technical-shaped prompts use grill-style probes: ambiguous behavior, rollout/backcompat, existing pattern, failure mode, and explicit non-goals. Technical questions include a recommendation tied to the repo scout when possible.
 
-1. `brainstorm-approaches` — 2-3 approaches, a recommendation, and a synthesis summary draft.
-2. `requirements-brief` — final Markdown brief with synthesis summary, requirements, stable IDs, boundaries, and non-goals.
-3. A saved brief at `docs/brainstorms/<YYYY-MM-DD>-<slug>.md`.
+At the direction check, the user can choose `Proceed`, `Adjust scope`, `Ask me another question`, or `Skip brainstorm / use original prompt`.
 
 ### `direct`
 
@@ -62,8 +66,8 @@ The workflow chooses between `brainstorm` and `direct`. Short or vague product-s
 
 After intake, both modes create:
 
-1. `codebase-research` — follows the built-in research-codebase skill, inspects the live codebase, cites paths and line references, and writes self-contained research to `research/docs/<YYYY-MM-DD>-<slug>.md`.
-2. `create-spec` — follows the built-in create-spec skill, consumes and cites the research, and writes a technical spec to `specs/<YYYY-MM-DD>-<slug>.md`.
+1. Workflow-native codebase research — ports the built-in `research-codebase` process into visible workflow stages instead of asking one inner agent to launch nested subagents. The workflow runs explicit intake/refinement, live locator, prior-research locator, external relevance scout, codebase analyzer, pattern finder, prior-research analyzer, online research, and synthesis stages. Intermediate branch outputs are saved under a hidden run artifact directory such as `.spec-driven-development-research-<run-id>/`; the final self-contained research document is written to `research/docs/<YYYY-MM-DD>-<slug>.md`.
+2. `create-spec` — uses the built-in `create-spec` document structure/output contract as a template, consumes and cites the research, and writes a technical spec to `specs/<YYYY-MM-DD>-<slug>.md` without launching helper agents.
 3. Human spec review — opens the spec for review/editing and asks the user to approve, request changes, or reject.
 
 ## Human review loop
@@ -105,6 +109,8 @@ Returned metadata can include:
 - `mode`
 - `brainstorm_brief_path`
 - `research_path`
+- `research_artifact_dir`
+- `research_manifest_path`
 - `spec_path`
 - `approved_spec_path`
 - `ralph_workflow`
