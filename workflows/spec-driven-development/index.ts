@@ -203,28 +203,183 @@ function isProductShaping(prompt: string): boolean {
   );
 }
 
+const APPROVED_STATUS = "Approved";
+
+const INITIAL_FRONTMATTER_PATTERN = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+const YAML_STATUS_PATTERN = /^(\s*)status\s*:.*$/im;
+const APPROVED_YAML_STATUS_PATTERN = /^\s*status\s*:\s*Approved\s*$/im;
+const TABLE_STATUS_PATTERN = /^(\s*)\|\s*Status\s*\|[^\r\n]*\|\s*$/gim;
+const APPROVED_TABLE_STATUS_PATTERN = /^\s*\|\s*Status\s*\|\s*Approved\s*\|\s*$/im;
+const BOLD_BULLET_STATUS_PATTERN = /^(\s*[-*]\s+\*\*)Status(\s*:\s*\*\*\s*)[^\r\n]*$/gim;
+const APPROVED_BOLD_BULLET_STATUS_PATTERN = /^\s*[-*]\s+\*\*Status\s*:\s*\*\*\s*Approved\s*$/im;
+const PLAIN_BULLET_STATUS_PATTERN = /^(\s*[-*]\s+)Status(\s*:\s*)[^\r\n]*$/gim;
+const APPROVED_PLAIN_BULLET_STATUS_PATTERN = /^\s*[-*]\s+Status\s*:\s*Approved\s*$/im;
+const PLAIN_BODY_STATUS_PATTERN = /^(\s*)Status(\s*:\s*)[^\r\n]*$/gim;
+const APPROVED_PLAIN_BODY_STATUS_PATTERN = /^\s*Status\s*:\s*Approved\s*$/im;
+const APPROVED_BODY_STATUS_PATTERNS = [
+  APPROVED_TABLE_STATUS_PATTERN,
+  APPROVED_BOLD_BULLET_STATUS_PATTERN,
+  APPROVED_PLAIN_BULLET_STATUS_PATTERN,
+  APPROVED_PLAIN_BODY_STATUS_PATTERN,
+];
+
+type MarkdownParts = {
+  frontmatter?: string;
+  body: string;
+};
+
+function splitInitialFrontmatter(content: string): MarkdownParts {
+  const match = content.match(INITIAL_FRONTMATTER_PATTERN);
+  if (!match) {
+    return { body: content };
+  }
+
+  return {
+    frontmatter: match[1],
+    body: content.slice(match[0].length),
+  };
+}
+
+function joinMarkdownParts(parts: MarkdownParts): string {
+  if (parts.frontmatter === undefined) {
+    return parts.body;
+  }
+
+  return `---\n${parts.frontmatter}\n---\n${parts.body}`;
+}
+
+function normalizeYamlStatus(frontmatter: string): string {
+  if (YAML_STATUS_PATTERN.test(frontmatter)) {
+    return frontmatter.replace(YAML_STATUS_PATTERN, `$1status: ${APPROVED_STATUS}`);
+  }
+
+  return `${frontmatter.trimEnd()}\nstatus: ${APPROVED_STATUS}`;
+}
+
+function normalizeBodyStatuses(body: string): { body: string; hadStatus: boolean } {
+  let hadStatus = false;
+  let nextBody = body.replace(TABLE_STATUS_PATTERN, (_match: string, indent: string) => {
+    hadStatus = true;
+    return `${indent}| Status | ${APPROVED_STATUS} |`;
+  });
+
+  nextBody = nextBody.replace(BOLD_BULLET_STATUS_PATTERN, (_match: string, prefix: string, suffix: string) => {
+    hadStatus = true;
+    return `${prefix}Status${suffix}${APPROVED_STATUS}`;
+  });
+
+  nextBody = nextBody.replace(PLAIN_BULLET_STATUS_PATTERN, (_match: string, prefix: string, suffix: string) => {
+    hadStatus = true;
+    return `${prefix}Status${suffix}${APPROVED_STATUS}`;
+  });
+
+  nextBody = nextBody.replace(PLAIN_BODY_STATUS_PATTERN, (_match: string, prefix: string, suffix: string) => {
+    hadStatus = true;
+    return `${prefix}Status${suffix}${APPROVED_STATUS}`;
+  });
+
+  return { body: nextBody, hadStatus };
+}
+
+function insertApprovedStatus(body: string): string {
+  const withHeadingStatus = body.replace(/^(# .+\n)/, `$1\nStatus: ${APPROVED_STATUS}\n`);
+  return withHeadingStatus === body ? `Status: ${APPROVED_STATUS}\n\n${body}` : withHeadingStatus;
+}
+
 function markApproved(content: string): string {
-  let approved = content;
+  const parts = splitInitialFrontmatter(content);
+  let hadStatus = false;
 
-  if (/^---\n[\s\S]*?\n---/.test(approved)) {
-    const frontmatter = approved.match(/^---\n([\s\S]*?)\n---/);
-    if (frontmatter) {
-      const body = frontmatter[1];
-      const nextBody = /^status:/im.test(body)
-        ? body.replace(/^status:.*$/im, "status: Approved")
-        : `${body.trimEnd()}\nstatus: Approved`;
-      approved = approved.replace(/^---\n[\s\S]*?\n---/, `---\n${nextBody}\n---`);
-    }
+  if (parts.frontmatter !== undefined) {
+    parts.frontmatter = normalizeYamlStatus(parts.frontmatter);
+    hadStatus = true;
   }
 
-  if (/\|\s*Status\s*\|[^\n]*\|/i.test(approved)) {
-    approved = approved.replace(/\|\s*Status\s*\|[^\n]*\|/i, "| Status | Approved |");
-  } else if (!/^status:\s*Approved\s*$/im.test(approved)) {
-    const withHeadingStatus = approved.replace(/^(# .+\n)/, `$1\nStatus: Approved\n`);
-    approved = withHeadingStatus === approved ? `Status: Approved\n\n${approved}` : withHeadingStatus;
+  const normalizedBody = normalizeBodyStatuses(parts.body);
+  parts.body = normalizedBody.body;
+  hadStatus = hadStatus || normalizedBody.hadStatus;
+
+  if (!hadStatus) {
+    parts.body = insertApprovedStatus(parts.body);
   }
 
-  return approved;
+  return joinMarkdownParts(parts);
+}
+
+function containsMatch(content: string, pattern: RegExp): boolean {
+  return content.search(pattern) !== -1;
+}
+
+function hasApprovedStatus(content: string): boolean {
+  const parts = splitInitialFrontmatter(content);
+  return Boolean(
+    (parts.frontmatter !== undefined && containsMatch(parts.frontmatter, APPROVED_YAML_STATUS_PATTERN))
+      || APPROVED_BODY_STATUS_PATTERNS.some((pattern) => containsMatch(parts.body, pattern)),
+  );
+}
+
+type SpecReviewDecision =
+  | { action: "approve" }
+  | { action: "reject" }
+  | { action: "revise"; feedback: string };
+
+const SPEC_APPROVAL_REPLIES = new Set([
+  "approve",
+  "approved",
+  "lgtm",
+  "looks good",
+  "looks good to me",
+  "ship",
+  "ship it",
+]);
+
+const SPEC_REJECTION_REPLIES = new Set([
+  "reject",
+  "rejected",
+  "cancel",
+  "stop",
+]);
+
+function normalizeSpecReviewReply(reply: string): string {
+  return reply
+    .trim()
+    .toLowerCase()
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[^a-z0-9\s'-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseSpecReviewDecision(reply: string): SpecReviewDecision {
+  const normalized = normalizeSpecReviewReply(reply);
+
+  if (SPEC_APPROVAL_REPLIES.has(normalized)) {
+    return { action: "approve" };
+  }
+
+  if (SPEC_REJECTION_REPLIES.has(normalized)) {
+    return { action: "reject" };
+  }
+
+  return { action: "revise", feedback: reply.trim() };
+}
+
+function specReviewPrompt(specPath: string, reviewIteration: number): string {
+  const reviewLabel = reviewIteration === 1 ? "draft" : `revision ${reviewIteration - 1}`;
+
+  return [
+    `Spec ${reviewLabel} is ready:`,
+    "",
+    specPath,
+    "",
+    "Open/read that Markdown file in the repo, then reply in this same box with one of:",
+    "- approve / approved / lgtm / looks good / ship",
+    "- reject / rejected / cancel / stop",
+    "- requested changes, questions, or edits for another revision",
+    "",
+    "The workflow will keep updating this same spec file until you approve or reject it.",
+  ].join("\n");
 }
 
 function stageTools(extra: string[] = []): string[] {
@@ -955,22 +1110,16 @@ Output only the final Markdown spec content for ${specPath}; no code fences and 
     let reviewIterations = 0;
     while (reviewIterations < MAX_SPEC_REVIEW_ITERATIONS) {
       reviewIterations += 1;
-      const editedSpec = await ctx.ui.editor(specContent);
-      specContent = text(editedSpec, specContent);
-      await writeArtifact(specPath, specContent);
+      const reviewReply = await ctx.ui.input(specReviewPrompt(specPath, reviewIterations));
+      const reviewDecision = parseSpecReviewDecision(reviewReply);
 
-      const reviewDecision = await ctx.ui.select(
-        `Review generated spec at ${specPath}. Choose how to proceed.`,
-        ["approve", "request changes", "reject"] as const,
-      );
-
-      if (reviewDecision === "approve") {
+      if (reviewDecision.action === "approve") {
         specContent = markApproved(specContent);
         await writeArtifact(specPath, specContent);
         break;
       }
 
-      if (reviewDecision === "reject") {
+      if (reviewDecision.action === "reject") {
         return {
           status: "rejected",
           mode: resolvedMode,
@@ -983,13 +1132,14 @@ Output only the final Markdown spec content for ${specPath}; no code fences and 
         };
       }
 
-      const feedback = await ctx.ui.input(
-        "What needs to change in the spec before it can be approved? Provide concrete feedback; the workflow will revise and present it again.",
-      );
+      if (reviewDecision.feedback.length === 0) {
+        continue;
+      }
+
       const revised = await ctx.task(`spec-revision-${reviewIterations}`, {
         previous: [
           { name: "current-spec", text: specContent },
-          { name: "review-feedback", text: feedback },
+          { name: "review-feedback", text: reviewDecision.feedback },
           { name: "research-artifact", text: `Research path: ${researchPath}` },
         ],
         prompt: `Revise the spec using the human review feedback.
@@ -1004,6 +1154,7 @@ Constraints:
 - Resolve feedback directly where possible.
 - Keep unresolved decisions in Open Questions.
 - Keep Status as Draft/In Review until explicit approval.
+- Keep writing to the same spec path so the review link remains stable: ${specPath}.
 
 Output only the complete revised Markdown spec for ${specPath}; no code fences and no extra commentary.`,
         tools: stageTools(),
@@ -1012,7 +1163,7 @@ Output only the complete revised Markdown spec for ${specPath}; no code fences a
       await writeArtifact(specPath, specContent);
     }
 
-    if (!/^status:\s*Approved\s*$/im.test(specContent) && !/\|\s*Status\s*\|\s*Approved\s*\|/i.test(specContent)) {
+    if (!hasApprovedStatus(specContent)) {
       return {
         status: "stopped",
         mode: resolvedMode,

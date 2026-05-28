@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 
 export interface SavedWorkflowReport {
   reportPath: string;
@@ -63,10 +63,53 @@ export function resolveReportPath(options: Omit<WriteWorkflowReportOptions, "rep
   };
 }
 
+function isFileExistsError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "EEXIST";
+}
+
+function defaultReportPathCandidate(reportPath: string, suffix: number): string {
+  const extension = extname(reportPath);
+  if (extension.length === 0) {
+    return `${reportPath}-${suffix}`;
+  }
+
+  return `${reportPath.slice(0, -extension.length)}-${suffix}${extension}`;
+}
+
+async function writeNewReportFile(reportPath: string, content: string): Promise<boolean> {
+  try {
+    await writeFile(reportPath, content, { encoding: "utf8", flag: "wx" });
+    return true;
+  } catch (error) {
+    if (isFileExistsError(error)) {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
 export async function writeWorkflowReport(options: WriteWorkflowReportOptions): Promise<SavedWorkflowReport> {
   const savedReport = resolveReportPath(options);
-  await mkdir(dirname(savedReport.reportPath), { recursive: true });
-  await writeFile(savedReport.reportPath, `${options.report.trimEnd()}\n`, "utf8");
+  const content = `${options.report.trimEnd()}\n`;
+  const explicitOutputPath = String(options.outputPath ?? "").trim();
 
-  return savedReport;
+  await mkdir(dirname(savedReport.reportPath), { recursive: true });
+
+  if (explicitOutputPath.length > 0) {
+    await writeFile(savedReport.reportPath, content, "utf8");
+    return savedReport;
+  }
+
+  if (await writeNewReportFile(savedReport.reportPath, content)) {
+    return savedReport;
+  }
+
+  for (let suffix = 2; ; suffix += 1) {
+    const reportPath = defaultReportPathCandidate(savedReport.reportPath, suffix);
+
+    if (await writeNewReportFile(reportPath, content)) {
+      return { ...savedReport, reportPath };
+    }
+  }
 }

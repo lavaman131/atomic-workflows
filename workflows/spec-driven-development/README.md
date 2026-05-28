@@ -68,15 +68,19 @@ After intake, both modes create:
 
 1. Workflow-native codebase research — ports the built-in `research-codebase` process into visible workflow stages instead of asking one inner agent to launch nested subagents. The workflow runs explicit intake/refinement, live locator, prior-research locator, external relevance scout, codebase analyzer, pattern finder, prior-research analyzer, online research, and synthesis stages. Intermediate branch outputs are saved under a hidden run artifact directory such as `.spec-driven-development-research-<run-id>/`; the final self-contained research document is written to `research/docs/<YYYY-MM-DD>-<slug>.md`.
 2. `create-spec` — uses the built-in `create-spec` document structure/output contract as a template, consumes and cites the research, and writes a technical spec to `specs/<YYYY-MM-DD>-<slug>.md` without launching helper agents.
-3. Human spec review — opens the spec for review/editing and asks the user to approve, request changes, or reject.
+3. Human spec review — writes the spec as a Markdown file under `specs/` and shows one review input screen with the repo-relative spec path. The user reads the file, then replies in that same input box with approval, rejection, or revision feedback.
 
 ## Human review loop
 
 The workflow only prepares a Ralph handoff after approval; it does not run Ralph itself.
 
-- `approve` marks the spec as `Approved` and returns Ralph launch metadata.
-- `request changes` runs a `spec-revision-N` stage and repeats review.
-- `reject` stops the workflow and does not call Ralph.
+Each review round uses one human-input screen instead of a tiny embedded editor plus separate decision prompts. The screen shows the stable repo-relative spec path, for example `specs/<YYYY-MM-DD>-<slug>.md`, and asks the user to open/read that Markdown file in the repo.
+
+The user then replies in the same input box:
+
+- `approve`, `approved`, `lgtm`, `looks good`, `looks good to me`, `ship`, or `ship it` marks the same spec file as `Approved` and returns Ralph launch metadata.
+- `reject`, `rejected`, `cancel`, or `stop` stops the workflow and does not call Ralph.
+- Any other non-empty reply is treated as revision feedback. The workflow runs `spec-revision-N`, overwrites the same spec file in place, and returns to the same one-screen review prompt with the same path.
 
 If the spec is not approved within the review-iteration limit, the workflow stops and does not prepare a Ralph handoff.
 

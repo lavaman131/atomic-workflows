@@ -52,8 +52,10 @@ It never installs dependencies, mutates lockfiles, applies remediations, or call
 The final Markdown report is saved under:
 
 ```text
-./security-gate/YYYY-MM-DD-<ai-generated-topic>.md
+./security-gate/YYYY-MM-DD-<ai-generated-topic>(-N).md
 ```
+
+The optional `-N` suffix is added only when a same-day default report with the same generated topic already exists.
 
 Intermediate stage outputs are saved as markdown artifacts under a hidden run directory so the final decision can read files instead of receiving large inline transcripts:
 

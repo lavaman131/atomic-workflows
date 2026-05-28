@@ -63,7 +63,7 @@ These workflows are provided by this registry package after installation:
 
 | Workflow | Use it when | Default posture | Details |
 | --- | --- | --- | --- |
-| `issue-test-lab` | Turn issues or bug reports into a risk-based test plan and validation report. | Analysis/reporting only. | [`workflows/issue-test-lab/`](./workflows/issue-test-lab/) |
+| `issue-test-lab` | Validate merge readiness for a PR, branch, diff, path, or repository target and return a pass/warn/block/unknown recommendation. | Analysis/reporting only. | [`workflows/issue-test-lab/`](./workflows/issue-test-lab/) |
 | `review-board` | Run a parallel specialist board for correctness, architecture, testing, security, and performance review. | No edits and no auto-posting. | [`workflows/review-board/`](./workflows/review-board/) |
 | `security-gate` | Gate a PR, branch, diff, or repository scope with local security scope detection, scans, secure review, and decision output. | No remediation and no auto-posting. | [`workflows/security-gate/`](./workflows/security-gate/) |
 | `spec-driven-development` | Turn a brainstorm or direct implementation intent into research, an approved spec, and a guarded Ralph implementation handoff. | No implementation before human spec approval. | [`workflows/spec-driven-development/`](./workflows/spec-driven-development/) |
@@ -73,7 +73,7 @@ These workflows are provided by this registry package after installation:
 Workflow-specific command examples, inputs, execution behavior, and report output notes now live with the workflow docs under [`workflows/`](./workflows/):
 
 - [`workflows/README.md`](./workflows/README.md) — registry workflow index, list/inspect commands, report output behavior, and package filters.
-- [`workflows/issue-test-lab/README.md`](./workflows/issue-test-lab/README.md) — issue intake, risk-based test selection, and validation reporting.
+- [`workflows/issue-test-lab/README.md`](./workflows/issue-test-lab/README.md) — target-first merge-readiness validation, evidence collection, and recommendation reporting.
 - [`workflows/review-board/README.md`](./workflows/review-board/README.md) — specialist review board configuration and reviewer roles.
 - [`workflows/security-gate/README.md`](./workflows/security-gate/README.md) — security scope detection, scan policy, and gate decisions.
 - [`workflows/spec-driven-development/README.md`](./workflows/spec-driven-development/README.md) — brainstorm/direct modes, spec approval loop, and Ralph handoff.
@@ -82,13 +82,13 @@ From an Atomic chat session:
 
 ```text
 /workflow list
-/workflow inputs issue-test-lab      # issue, target
+/workflow inputs issue-test-lab      # target, focus, issue (deprecated)
 /workflow inputs review-board        # target, focus
 /workflow inputs security-gate       # target, focus
 /workflow inputs spec-driven-development
 ```
 
-The simplified reporting workflows auto-save final reports to `./issue-test-lab/`, `./review-board/`, and `./security-gate/` with `YYYY-MM-DD-<ai-generated-topic>.md` filenames. Intermediate evidence is preserved in hidden run artifact directories with manifests.
+The simplified reporting workflows auto-save final reports to `./issue-test-lab/`, `./review-board/`, and `./security-gate/` with `YYYY-MM-DD-<ai-generated-topic>.md` filenames. If a same-day default report with the same generated topic already exists, the new report uses a collision suffix such as `-2` or `-3` before `.md`. Intermediate evidence is preserved in hidden run artifact directories with manifests.
 
 ## Built into Atomic
 

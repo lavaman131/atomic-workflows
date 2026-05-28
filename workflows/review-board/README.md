@@ -45,8 +45,10 @@ Internal defaults are intentionally not exposed in the workflow UI: deep review,
 The final Markdown report is saved under:
 
 ```text
-./review-board/YYYY-MM-DD-<ai-generated-topic>.md
+./review-board/YYYY-MM-DD-<ai-generated-topic>(-N).md
 ```
+
+The optional `-N` suffix is added only when a same-day default report with the same generated topic already exists.
 
 Intermediate stage outputs are saved as markdown artifacts under a hidden run directory so the final aggregation can read files instead of receiving large inline transcripts:
 
