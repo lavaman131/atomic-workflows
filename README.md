@@ -15,6 +15,8 @@
 </p>
 
 <p align="center">
+  <a href="#prerequisites">Prerequisites</a>
+  &nbsp;·&nbsp;
   <a href="#install-the-registry">Install</a>
   &nbsp;·&nbsp;
   <a href="#enable-selected-workflows-only">Select workflows</a>
@@ -35,6 +37,10 @@
 The workflows here are concrete developer-job recipes for analysis, review, security validation, implementation planning, reporting, and workflow chaining. Some are intentionally read-only; others demonstrate how one workflow can hand off to another workflow for active implementation.
 
 Use this repository out of the box to run focused code reviews, gate security risk, turn implementation intent into approved specs, and study the same patterns as starting points for your own Atomic workflows.
+
+## Prerequisites
+
+- [Atomic](https://docs.bastani.ai/quickstart) installed and configured.
 
 ## Install the registry
 
