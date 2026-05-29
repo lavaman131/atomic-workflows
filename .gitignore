@@ -3,6 +3,9 @@
 context-build/
 research/
 
+/docs/brainstorms/
+/specs/
+
 /review-board/
 /security-gate/
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { renderTaskContexts } from "../workflows/spec-driven-development/helpers.ts";
+import { renderTaskContexts } from "./helpers.ts";
 
 describe("spec driven development helpers", () => {
   test("renders multiple task contexts into one previous payload", () => {

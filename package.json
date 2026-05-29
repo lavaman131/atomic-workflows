@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Installable workflow recipes for Atomic.",
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "test": "bun test"
   },
   "keywords": [
     "atomic-package",
+    "pi-package",
     "atomic",
     "workflows",
     "ai",
@@ -34,9 +36,10 @@
   },
   "files": [
     "README.md",
+    "LICENSE",
     "assets/atomic-promo.gif",
-    "src/**/*.ts",
     "workflows/**/*.md",
-    "workflows/**/*.ts"
+    "workflows/**/*.ts",
+    "!workflows/**/*.test.ts"
   ]
 }
