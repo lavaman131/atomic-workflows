@@ -1,13 +1,13 @@
 import { join } from "node:path";
 import { defineWorkflow } from "@bastani/workflows";
-import { reportSummaryText, writeWorkflowReport } from "../_shared/report-output.js";
+import { reportSummaryText, writeWorkflowReport } from "./report-output.js";
 import {
   createWorkflowArtifactRun,
   displayPath,
   manifestArtifactPaths,
   markdownArtifact,
   writeWorkflowManifest,
-} from "../_shared/workflow-artifacts.js";
+} from "./workflow-artifacts.js";
 
 function text(value: unknown, fallback = ""): string {
   const result = String(value ?? fallback).trim();

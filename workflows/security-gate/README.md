@@ -7,6 +7,12 @@ Gate a PR, branch, diff, path, or repository scope with local security scope det
 - **Final report folder:** `./security-gate/`
 - **Artifact folder:** hidden run directory `./.security-gate-<run-id>/`
 
+## What this workflow demonstrates
+
+`security-gate` is a solid read-only security workflow. It inspects targets, collects evidence, runs safe local analysis where appropriate, writes a durable gate report, and avoids remediation or auto-posting comments. Use it when you want high-signal security output that a human can review, copy, or act on.
+
+This workflow can also be used as a template for service-specific threat deltas, release gates, dependency review, or other security validation patterns. Copy it into your project or package, then tune the prompts, stages, validation policy, artifact strategy, safety posture, and output format for your team.
+
 ## Run examples
 
 ```text

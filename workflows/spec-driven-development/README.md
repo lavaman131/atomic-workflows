@@ -8,6 +8,14 @@ Turn a brainstorm or direct implementation intent into research, an approved spe
 - **Posture:** no implementation before human spec approval.
 - **Generated artifacts:** `docs/brainstorms/`, `research/docs/`, and `specs/`
 
+## What this workflow demonstrates
+
+`spec-driven-development` is the active, spec-first path. It can clarify vague ideas, research the codebase, write a spec, loop on human review, and then return launch metadata plus a copyable command for Atomic's built-in `ralph` workflow. This workflow does not edit code before approval; the follow-on Ralph workflow is where implementation work happens.
+
+Together, spec-driven development and Ralph show how to chain workflows cleanly instead of hiding every step inside one opaque run. After approval, monitor the Ralph run separately with `/workflow status` and `/workflow connect <ralph-run-id>`.
+
+This workflow can also be used as a template for approval-gated implementation planning, research-backed specs, or other workflow chaining patterns. Copy it into your project or package, then tune the intake, research stages, approval loop, handoff contract, artifact strategy, and output format for your team.
+
 ## Run examples
 
 The user-facing entry point is `spec-driven-development`. In Atomic workflow command syntax, pass `mode` and `prompt` as inputs:

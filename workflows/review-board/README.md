@@ -7,6 +7,12 @@ Run a full specialist board for correctness, architecture, testing, security, an
 - **Final report folder:** `./review-board/`
 - **Artifact folder:** hidden run directory `./.review-board-<run-id>/`
 
+## What this workflow demonstrates
+
+`review-board` is a solid read-only review workflow. It inspects targets, collects evidence, writes a durable report, and avoids mutating code or auto-posting comments. Use it when you want high-signal specialist review output that a human can copy, review, or act on.
+
+This workflow can also be used as a template for domain-specific review boards, API councils, cross-repo checks, or other parallel reviewer patterns. Copy it into your project or package, then tune the prompts, reviewer roles, artifact strategy, safety posture, and output format for your team.
+
 ## Run examples
 
 ```text
