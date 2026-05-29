@@ -10,7 +10,7 @@ Each workflow has its own subfolder with an `index.ts` entrypoint and local docu
 | `security-gate` | [`security-gate/index.ts`](./security-gate/index.ts) | [`security-gate/README.md`](./security-gate/README.md) |
 | `spec-driven-development` | [`spec-driven-development/index.ts`](./spec-driven-development/index.ts) | [`spec-driven-development/README.md`](./spec-driven-development/README.md) |
 
-[`_shared/`](./_shared/) contains shared helper code used by reporting workflows. Workflow-specific tests live next to the workflow helpers they cover.
+Workflow-specific helper code and tests live next to the workflow files they support.
 
 ## List and inspect
 
