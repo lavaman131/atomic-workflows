@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Installable workflow recipes for Atomic.",
+  "scripts": {
+    "test": "bun test"
+  },
   "keywords": [
     "atomic-package",
     "atomic",

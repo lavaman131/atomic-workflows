@@ -3,11 +3,9 @@
 context-build/
 research/
 
-/issue-test-lab/
 /review-board/
 /security-gate/
 
-/.issue-test-lab-*/
 /.review-board-*/
 /.security-gate-*/
 /.spec-driven-development-research-*/

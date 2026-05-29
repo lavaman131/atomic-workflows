@@ -6,7 +6,6 @@ Each workflow has its own subfolder with an `index.ts` entrypoint and local docu
 
 | Workflow | Source | Details |
 | --- | --- | --- |
-| `issue-test-lab` | [`issue-test-lab/index.ts`](./issue-test-lab/index.ts) | Target-first merge-readiness validation with `pass`/`warn`/`block`/`unknown` recommendation. See [`issue-test-lab/README.md`](./issue-test-lab/README.md). |
 | `review-board` | [`review-board/index.ts`](./review-board/index.ts) | [`review-board/README.md`](./review-board/README.md) |
 | `security-gate` | [`security-gate/index.ts`](./security-gate/index.ts) | [`security-gate/README.md`](./security-gate/README.md) |
 | `spec-driven-development` | [`spec-driven-development/index.ts`](./spec-driven-development/index.ts) | [`spec-driven-development/README.md`](./spec-driven-development/README.md) |
@@ -19,7 +18,6 @@ From an Atomic chat session:
 
 ```text
 /workflow list
-/workflow inputs issue-test-lab
 /workflow inputs review-board
 /workflow inputs security-gate
 /workflow inputs spec-driven-development
@@ -29,17 +27,16 @@ From an Atomic chat session:
 
 Reporting workflows write their final Markdown report to disk and return compact metadata instead of returning the full report inline.
 
-Reporting workflows save final reports under a project-root folder named after the workflow:
+Reporting workflows save final reports under project-root output folders:
 
 ```text
 ./review-board/YYYY-MM-DD-<ai-generated-topic>(-N).md
 ./security-gate/YYYY-MM-DD-<ai-generated-topic>(-N).md
-./issue-test-lab/YYYY-MM-DD-<ai-generated-topic>(-N).md
 ```
 
-The optional `-N` suffix is added only when a same-day default report with the same generated topic already exists; explicit `outputPath` values are written exactly as requested. Intermediate workflow outputs are preserved under hidden run-specific artifact directories such as `./.review-board-<run-id>/`, `./.security-gate-<run-id>/`, and `./.issue-test-lab-<run-id>/`. Each artifact directory includes markdown stage outputs created by that run and a `manifest.json` recording the run id, timestamps, user input, final report path, and actual artifact paths. Some workflows may intentionally create a smaller artifact set when they short-circuit.
+Intermediate workflow outputs are preserved under hidden run-specific artifact directories such as `./.review-board-<run-id>/` and `./.security-gate-<run-id>/`. Each artifact directory includes markdown stage outputs created by that run and a `manifest.json` recording the run id, timestamps, user input, final report path, and actual artifact paths. Some workflows may intentionally create a smaller artifact set when they short-circuit.
 
-The return object includes `summary`, `report_path`, `filename_summary`, `artifact_dir`, `manifest_path`, and `stages`. `issue-test-lab` also returns recommendation metadata: `recommendation`, `reportPath`, `artifactManifestPath`, `targetSummary`, `riskLevel`, and `validationSummary`.
+The return object includes `summary`, `report_path`, `filename_summary`, `artifact_dir`, `manifest_path`, and `stages`.
 
 ## `settings.json` filters
 

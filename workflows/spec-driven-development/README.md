@@ -2,6 +2,8 @@
 
 Turn a brainstorm or direct implementation intent into research, an approved spec, and a guarded Ralph implementation handoff.
 
+> **Important Ralph handoff behavior:** this workflow does not implement code itself. After human approval it finishes with `approved-ready-for-ralph`, returns a `/workflow ralph ...` command plus machine-readable launch metadata, and a parent chat/agent may then start Ralph as a separate top-level workflow. If that happens, the spec-driven run can look finished while Ralph is still running. Use `/workflow status`, `/workflow connect <ralph-run-id>` or F2, and `/workflow attach <ralph-run-id> <stage>` to monitor the follow-on Ralph run. If Ralph or a worker uses tmux, read the Ralph stage/worker output for the exact tmux attach command; this workflow cannot know it before Ralph starts.
+
 - **Source:** [`./index.ts`](./index.ts)
 - **Posture:** no implementation before human spec approval.
 - **Generated artifacts:** `docs/brainstorms/`, `research/docs/`, and `specs/`
@@ -28,7 +30,7 @@ The user-facing entry point is `spec-driven-development`. In Atomic workflow com
 | --- | --- | --- | --- |
 | `mode` | `select` | `auto` | `brainstorm`, `direct`, or `auto`. Auto uses brainstorm for vague/product-shaped prompts and direct for concrete implementation intent. |
 | `prompt` | `text` | required | Feature idea, implementation intent, or problem statement. |
-| `max_loops` | `number` | `5` | Ralph implementation loop cap after human spec approval. |
+| `max_loops` | `number` | `5` | Ralph implementation loop cap after human spec approval. Used by the follow-on Ralph workflow; this workflow ends at handoff. |
 
 ## Modes
 
@@ -86,7 +88,7 @@ If the spec is not approved within the review-iteration limit, the workflow stop
 
 ## Ralph handoff
 
-After approval, the workflow completes with status `approved-ready-for-ralph` and returns machine-readable launch metadata for Atomic's built-in `ralph` workflow:
+After approval, the workflow completes with status `approved-ready-for-ralph` and returns machine-readable launch metadata for Atomic's built-in `ralph` workflow. Immediately before the final `ralph-ready` stage, it creates a `ralph-handoff-notice` graph stage with monitoring instructions, so users see the handoff behavior at the moment it becomes relevant.
 
 ```json
 {
@@ -99,6 +101,8 @@ After approval, the workflow completes with status `approved-ready-for-ralph` an
 ```
 
 A parent chat/agent can then start Ralph as a separate top-level workflow using the returned `ralph_workflow` and `ralph_inputs`. That preserves normal Ralph visibility in `/workflow status`, F2 graph connect, attach, pause, interrupt, and resume. The workflow also returns a user-copyable `ralph_command` for manual fallback.
+
+If a parent chat/agent auto-starts Ralph, treat the completed spec-driven run as the handoff point, not the end of the larger implementation effort. Look for the new `ralph` run in `/workflow status`, connect to that run, and inspect Ralph's active stage output for any worker/tmux attach details.
 
 ## Output
 

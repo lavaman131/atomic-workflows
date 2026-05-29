@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { defineWorkflow } from "@bastani/workflows";
+import { type TaskContext, renderTaskContexts } from "./helpers.ts";
 import { reportFilenameSummary } from "../../src/report-output.js";
 import {
   createWorkflowArtifactRun,
@@ -11,8 +12,6 @@ import {
   writeWorkflowManifest,
 } from "../../src/workflow-artifacts.js";
 
-type TaskContext = { name: string; text: string };
-
 const WORKFLOW_NAME = "spec-driven-development";
 const DEFAULT_MAX_LOOPS = 5;
 const MAX_SPEC_REVIEW_ITERATIONS = 10;
@@ -21,6 +20,14 @@ const FILE_ONLY_OUTPUT = "file-only" as const;
 
 const RESEARCH_SKILL_NAME = "research-codebase";
 const CREATE_SPEC_SKILL_NAME = "create-spec";
+const RALPH_HANDOFF_NOTICE = [
+  "Important Ralph handoff behavior:",
+  "- This workflow researches, writes, and human-approves a spec; it does not implement code itself.",
+  "- After approval it ends with status `approved-ready-for-ralph` and returns a `/workflow ralph ...` command plus machine-readable launch metadata.",
+  "- If the parent chat/agent auto-starts Ralph from that metadata, Ralph runs as a separate top-level workflow. The spec-driven workflow can look finished while Ralph is still running.",
+  "- Watch the follow-on work with `/workflow status`, open it with `/workflow connect <ralph-run-id>` or F2, and attach with `/workflow attach <ralph-run-id> <stage>`.",
+  "- If Ralph or one of its workers uses tmux, the exact tmux attach command is emitted by the Ralph stage/worker output; this workflow cannot know that command before Ralph starts.",
+].join("\n");
 const CE_BRAINSTORM_SOURCE =
   "https://github.com/EveryInc/compound-engineering-plugin/blob/main/docs/skills/ce-brainstorm.md";
 const GRILL_ME_SOURCE = "https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me";
@@ -446,7 +453,7 @@ function researchFrontmatter(topic: string): string {
 }
 
 export default defineWorkflow("spec-driven-development")
-  .description("Spec Driven Development wrapper: brainstorm/direct intake → research → spec → HIL approval → Ralph handoff.")
+  .description("Spec Driven Development wrapper: brainstorm/direct intake → research → spec → HIL approval → separate Ralph handoff; monitor follow-on Ralph with /workflow status/connect.")
   .input("mode", {
     type: "select",
     choices: ["brainstorm", "direct", "auto"],
@@ -461,7 +468,7 @@ export default defineWorkflow("spec-driven-development")
   .input("max_loops", {
     type: "number",
     default: DEFAULT_MAX_LOOPS,
-    description: "Maximum Ralph implementation loop count after spec approval.",
+    description: "Maximum Ralph implementation loop count after spec approval. Used by the follow-on Ralph workflow; this workflow ends at handoff.",
   })
   .run(async (ctx) => {
     const initialPrompt = text(ctx.inputs.prompt);
@@ -573,11 +580,11 @@ Output only JSON, no code fences, with this shape:
 
       let scopeAdjustment = "";
       let directionShape = await ctx.task("brainstorm-direction-check", {
-        previous: [
+        previous: renderTaskContexts([
           { name: "context-scout", text: brainstormScout.text },
           { name: "silent-triage", text: JSON.stringify(brainstormPlan, null, 2) },
           { name: "answers", text: JSON.stringify(brainstormAnswers, null, 2) },
-        ],
+        ]),
         prompt: `Create one compact direction check for this brainstorm. Keep it short; this replaces any large synthesis phase.
 
 Original prompt:
@@ -621,12 +628,12 @@ Proceed with codebase research?`,
         askedQuestionCount = brainstormAnswers.length;
 
         directionShape = await ctx.task(`brainstorm-direction-check-${askedQuestionCount}`, {
-          previous: [
+          previous: renderTaskContexts([
             { name: "context-scout", text: brainstormScout.text },
             { name: "silent-triage", text: JSON.stringify(brainstormPlan, null, 2) },
             { name: "answers", text: JSON.stringify(brainstormAnswers, null, 2) },
             { name: "scope-adjustment", text: scopeAdjustment },
-          ],
+          ]),
           prompt: `Refresh the compact direction check after the latest brainstorm answer.
 
 Original prompt:
@@ -666,12 +673,12 @@ Proceed with codebase research?`,
           `What should I adjust before research/spec generation?\n\nCurrent direction:\n\n${stripMarkdownFence(directionShape.text)}`,
         );
         directionShape = await ctx.task("brainstorm-direction-check-adjusted", {
-          previous: [
+          previous: renderTaskContexts([
             { name: "context-scout", text: brainstormScout.text },
             { name: "silent-triage", text: JSON.stringify(brainstormPlan, null, 2) },
             { name: "answers", text: JSON.stringify(brainstormAnswers, null, 2) },
             { name: "scope-adjustment", text: scopeAdjustment },
-          ],
+          ]),
           prompt: `Apply the user's scope adjustment and create the final compact direction check.
 
 Original prompt:
@@ -710,12 +717,12 @@ Proceed with codebase research?`,
         const answer = await ctx.ui.input(formatBrainstormQuestion(nextQuestion, askedQuestionCount));
         brainstormAnswers.push({ question: nextQuestion, answer: text(answer, "No explicit answer provided.") });
         directionShape = await ctx.task("brainstorm-direction-check-final-extra", {
-          previous: [
+          previous: renderTaskContexts([
             { name: "context-scout", text: brainstormScout.text },
             { name: "silent-triage", text: JSON.stringify(brainstormPlan, null, 2) },
             { name: "answers", text: JSON.stringify(brainstormAnswers, null, 2) },
             { name: "scope-adjustment", text: scopeAdjustment },
-          ],
+          ]),
           prompt: `Create the final compact direction check after the final extra brainstorm question.
 
 Original prompt:
@@ -757,13 +764,13 @@ Proceed with codebase research?`,
         };
       } else {
         const brainstormBrief = await ctx.task("brainstorm-brief", {
-          previous: [
+          previous: renderTaskContexts([
             { name: "context-scout", text: brainstormScout.text },
             { name: "silent-triage", text: JSON.stringify(brainstormPlan, null, 2) },
             { name: "answers", text: JSON.stringify(brainstormAnswers, null, 2) },
             { name: "scope-adjustment", text: scopeAdjustment },
             { name: "direction-check", text: stripMarkdownFence(directionShape.text) },
-          ],
+          ]),
           prompt: `Write a small brainstorm brief to feed codebase research and spec generation. This should not become a second PRD.
 
 Original prompt:
@@ -1084,7 +1091,10 @@ Rules:
 
     const specPath = artifactPath("specs", initialPrompt, "spec-driven-development-spec");
     const specDraft = await ctx.task("create-spec", {
-      previous: [implementationIntent, { name: "research-artifact", text: `Research artifact path: ${researchPath}\n\n${researchContent}` }],
+      previous: renderTaskContexts([
+        implementationIntent,
+        { name: "research-artifact", text: `Research artifact path: ${researchPath}\n\n${researchContent}` },
+      ]),
       prompt: `Use the built-in Atomic ${CREATE_SPEC_SKILL_NAME} skill's document structure and output contract as a template, but do not load the skill dynamically, do not spawn helper agents, do not write files yourself, and do not ask the user questions during this stage; put unresolved decisions in Open Questions for the HIL review gate.
 
 Input and research:
@@ -1137,11 +1147,11 @@ Output only the final Markdown spec content for ${specPath}; no code fences and 
       }
 
       const revised = await ctx.task(`spec-revision-${reviewIterations}`, {
-        previous: [
+        previous: renderTaskContexts([
           { name: "current-spec", text: specContent },
           { name: "review-feedback", text: reviewDecision.feedback },
           { name: "research-artifact", text: `Research path: ${researchPath}` },
-        ],
+        ]),
         prompt: `Revise the spec using the human review feedback.
 
 Context:
@@ -1187,6 +1197,7 @@ Output only the complete revised Markdown spec for ${specPath}; no code fences a
       "Parent chat/agent should launch Ralph as a separate top-level workflow so Ralph has normal workflow status, graph, attach, pause, interrupt, and resume visibility.",
     ].join("\n");
 
+    await ctx.stage("ralph-handoff-notice").complete(RALPH_HANDOFF_NOTICE);
     await ctx.stage("ralph-ready").complete(ralphReadyText);
 
     return {
@@ -1203,7 +1214,7 @@ Output only the complete revised Markdown spec for ${specPath}; no code fences a
       ralph_inputs: ralphInputs,
       ralph_command: ralphCommand,
       max_loops: maxLoops,
-      message: "Spec approved. Launch Ralph as a separate top-level workflow using ralph_workflow and ralph_inputs for full Ralph visibility/control.",
+      message: "Spec approved. Launch Ralph as a separate top-level workflow using ralph_workflow and ralph_inputs for full Ralph visibility/control. If a parent chat/agent auto-starts Ralph, check /workflow status for the new Ralph run, connect with /workflow connect <ralph-run-id> or F2, and read Ralph's active stage output for any tmux attach command.",
     };
   })
   .compile();
