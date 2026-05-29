@@ -15,13 +15,15 @@
 </p>
 
 <p align="center">
-  <a href="#get-started">Get started</a>
+  <a href="#install-the-registry">Install</a>
+  &nbsp;·&nbsp;
+  <a href="#enable-selected-workflows-only">Select workflows</a>
   &nbsp;·&nbsp;
   <a href="#registry-workflows">Workflows</a>
   &nbsp;·&nbsp;
-  <a href="#workflow-details">Details</a>
+  <a href="#workflow-documentation">Docs</a>
   &nbsp;·&nbsp;
-  <a href="#use-these-as-starting-points">Customize</a>
+  <a href="#customize-these-workflow-recipes">Customize</a>
   &nbsp;·&nbsp;
   <a href="#contributing-workflows">Contribute</a>
   &nbsp;·&nbsp;
@@ -36,7 +38,7 @@ The workflows here are concrete developer-job recipes for analysis, review, secu
 
 Use this repository out of the box to run focused code reviews, gate security risk, turn implementation intent into approved specs, and study the same patterns as starting points for your own Atomic workflows.
 
-## Get started
+## Install the registry
 
 Download/install the registry globally for your user:
 
@@ -52,7 +54,7 @@ atomic install git:github.com/lavaman131/atomic-workflows -l
 
 `-l` writes the package entry to project settings (`.atomic/settings.json`). Without `-l`, Atomic writes to user settings (`~/.atomic/agent/settings.json`).
 
-### Update this registry only
+## Update only this registry
 
 To update `atomic-workflows` without updating any other Atomic packages you have installed, run:
 
@@ -62,7 +64,16 @@ atomic update git:github.com/lavaman131/atomic-workflows
 
 If you installed a pinned ref such as `git:github.com/lavaman131/atomic-workflows@v1.0.0`, Atomic skips it during package updates. Remove the ref or reinstall with an unpinned source to follow the latest version.
 
-To enable only certain workflows from this registry, edit your Atomic settings after installation. Use project settings (`.atomic/settings.json`) for one repository, or user settings (`~/.atomic/settings.json`) for your global Atomic configuration, and add a workflow filter to the package entry:
+## Enable selected workflows only
+
+By default, Atomic loads every workflow exported by this registry. To load only the workflows you want, edit your Atomic settings after installation and add a `workflows` allowlist to this package entry.
+
+Choose the settings file based on where you installed the registry:
+
+- Project install (`atomic install ... -l`): `.atomic/settings.json`
+- Global/user install: `~/.atomic/agent/settings.json`
+
+For example, this configuration enables only `review-board` and `security-gate` from `atomic-workflows`:
 
 ```json
 {
@@ -78,13 +89,13 @@ To enable only certain workflows from this registry, edit your Atomic settings a
 }
 ```
 
-You can also exclude specific workflows with `!workflows/<name>/index.ts`. See [`workflows/README.md`](./workflows/README.md#settingsjson-filters) for more filter examples.
+Use workflow paths relative to the package root, such as `workflows/review-board/index.ts`. You can also exclude specific workflows with `!workflows/<name>/index.ts`. See [`workflows/README.md`](./workflows/README.md#settingsjson-filters) for more filter examples.
 
 ## Registry workflows
 
 These workflows are provided by this registry package after installation. See [`workflows/README.md`](./workflows/README.md) for the current workflow index, details, and settings filter examples.
 
-## Workflow details
+## Workflow documentation
 
 Workflow-specific command examples, inputs, execution behavior, and report output notes live with the workflow docs under [`workflows/`](./workflows/):
 
@@ -104,7 +115,7 @@ From an Atomic chat session:
 
 The reporting workflows auto-save final reports to `./review-board/` and `./security-gate/`. Intermediate evidence is preserved in hidden run artifact directories with manifests.
 
-## Use these as starting points
+## Customize these workflow recipes
 
 These workflows are deliberately readable TypeScript recipes, not black boxes. Copy one into your project or your own workflow package and adapt the inputs, prompts, stages, parallel specialists, validation policy, and output format.
 

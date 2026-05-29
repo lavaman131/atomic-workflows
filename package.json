@@ -1,6 +1,6 @@
 {
   "name": "atomic-workflows",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "description": "Installable workflow recipes for Atomic.",
   "license": "SEE LICENSE IN LICENSE",
