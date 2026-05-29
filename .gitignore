@@ -1,0 +1,11 @@
+# Atomic local state and generated workflow outputs
+.atomic/
+context-build/
+research/
+
+/review-board/
+/security-gate/
+
+/.review-board-*/
+/.security-gate-*/
+/.spec-driven-development-research-*/
