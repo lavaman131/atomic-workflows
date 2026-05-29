@@ -3,14 +3,14 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { defineWorkflow } from "@bastani/workflows";
 import { type TaskContext, renderTaskContexts } from "./helpers.ts";
-import { reportFilenameSummary } from "../../src/report-output.js";
+import { reportFilenameSummary } from "../_shared/report-output.js";
 import {
   createWorkflowArtifactRun,
   displayPath,
   manifestArtifactPaths,
   markdownArtifact,
   writeWorkflowManifest,
-} from "../../src/workflow-artifacts.js";
+} from "../_shared/workflow-artifacts.js";
 
 const WORKFLOW_NAME = "spec-driven-development";
 const DEFAULT_MAX_LOOPS = 5;
