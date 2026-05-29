@@ -21,13 +21,11 @@
   &nbsp;·&nbsp;
   <a href="#registry-workflows">Workflows</a>
   &nbsp;·&nbsp;
-  <a href="#workflow-documentation">Docs</a>
-  &nbsp;·&nbsp;
   <a href="#customize-these-workflow-recipes">Customize</a>
   &nbsp;·&nbsp;
   <a href="#contributing-workflows">Contribute</a>
   &nbsp;·&nbsp;
-  <a href="https://docs.bastani.ai/workflows#package-setup">Docs</a>
+  <a href="https://docs.bastani.ai/workflows">Docs</a>
 </p>
 
 ---
@@ -54,7 +52,7 @@ atomic install git:github.com/lavaman131/atomic-workflows -l
 
 `-l` writes the package entry to project settings (`.atomic/settings.json`). Without `-l`, Atomic writes to user settings (`~/.atomic/agent/settings.json`).
 
-## Update only this registry
+## Update this registry
 
 To update `atomic-workflows` without updating any other Atomic packages you have installed, run:
 
@@ -95,29 +93,11 @@ Use workflow paths relative to the package root, such as `workflows/review-board
 
 These workflows are provided by this registry package after installation. See [`workflows/README.md`](./workflows/README.md) for the current workflow index, details, and settings filter examples.
 
-## Workflow documentation
-
-Workflow-specific command examples, inputs, execution behavior, and report output notes live with the workflow docs under [`workflows/`](./workflows/):
-
-- [`workflows/README.md`](./workflows/README.md) — registry workflow index, list/inspect commands, report output behavior, and package filters.
-- [`workflows/review-board/README.md`](./workflows/review-board/README.md) — specialist review board configuration and reviewer roles.
-- [`workflows/security-gate/README.md`](./workflows/security-gate/README.md) — security scope detection, scan policy, and gate decisions.
-- [`workflows/spec-driven-development/README.md`](./workflows/spec-driven-development/README.md) — brainstorm/direct modes, spec approval loop, and Ralph handoff.
-
-From an Atomic chat session:
-
-```text
-/workflow list
-/workflow inputs review-board        # target, focus
-/workflow inputs security-gate       # target, focus
-/workflow inputs spec-driven-development
-```
-
-The reporting workflows auto-save final reports to `./review-board/` and `./security-gate/`. Intermediate evidence is preserved in hidden run artifact directories with manifests.
-
 ## Customize these workflow recipes
 
 These workflows are deliberately readable TypeScript recipes, not black boxes. Copy one into your project or your own workflow package and adapt the inputs, prompts, stages, parallel specialists, validation policy, and output format.
+
+For full guidance on building and distributing custom workflows, see the [Atomic workflows documentation](https://docs.bastani.ai/workflows). You can also ask Atomic to create a workflow for you.
 
 Good starting points:
 
